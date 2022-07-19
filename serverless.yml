@@ -13,7 +13,7 @@ provider:
   environment:
     GROUPS_TABLE: Groups-${self:provider.stage}
     IMAGES_TABLE: Images-${self:provider.stage}
-    IMAGE_ID_TABLE: ImagesIdIndex
+    IMAGE_ID_INDEX: ImagesIdIndex
 
   iamRoleStatements:
     - Effect: Allow
@@ -25,6 +25,7 @@ provider:
     - Effect: Allow
       Action: 
         - dynamodb:Query
+        - dynamodb:PutItem
       Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.IMAGES_TABLE}
     - Effect: Allow
       Action: 
@@ -66,6 +67,14 @@ functions:
           request:
             schema:
               application/json: ${file(models/create-group-request.json)}
+  
+  CreateImage:
+    handler: src/lambda/http/createImage.handler
+    events:
+      - http:
+          method: post
+          path: groups/{groupId}/images
+          cors: true
 
 resources:
   Resources:
