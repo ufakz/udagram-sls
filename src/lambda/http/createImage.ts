@@ -1,6 +1,7 @@
 import { APIGatewayProxyHandler, APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda'
 import 'source-map-support/register'
 import * as AWS from 'aws-sdk'
+import * as uuid from 'uuid'
 
 const docClient = new AWS.DynamoDB.DocumentClient()
 
@@ -25,10 +26,13 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
   }
 
   const imageId = uuid.v4()
+  const timestamp = new Date().toISOString()
   const parsedBody = JSON.parse(event.body)
 
   const newImage = {
-    id: imageId,
+    imageId,
+    timestamp,
+    groupId,
     ...parsedBody
   }
 
