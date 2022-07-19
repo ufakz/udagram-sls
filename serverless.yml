@@ -75,6 +75,9 @@ functions:
           method: post
           path: groups/{groupId}/images
           cors: true
+          request:
+            schema:
+              application/json: ${file(models/create-image-request.json)}
 
 resources:
   Resources:
