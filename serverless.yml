@@ -95,7 +95,7 @@ functions:
   
   SendUploadNotifications:
     environment:
-      STAGE: ${sefl:provider.stage}
+      STAGE: ${self:provider.stage}
       API_ID: oyph9skhr3
     handler: src/lambda/s3/sendNotification.handler
     events:
@@ -115,6 +115,15 @@ functions:
     events:
       - websocket:
           route: $disconnect
+
+  SyncWithElasticsearchHandler:
+    environment:
+      ES_ENDPOINT: !GetAtt ImagesSearch.DomainEndpoint
+    handler: src/lambda/dynamoDb/elasticSearchSync.handler
+    events:
+      - stream:
+          type: dynamodb
+          arn: !GetAtt ImagesDynamoTable.StreamArn
 
 resources:
   Resources:
@@ -166,6 +175,8 @@ resources:
               ProjectionType: ALL
         BillingMode: PAY_PER_REQUEST
         TableName: ${self:provider.environment.IMAGES_TABLE}
+        StreamSpecification:
+          StreamViewType: NEW_IMAGE
     
     AttachmentsBucket:
       Type: AWS::S3::Bucket
@@ -198,5 +209,30 @@ resources:
               Action: 's3:GetObject'
               Resource: 'arn:aws:s3:::${self:provider.environment.IMAGES_S3_BUCKET}/*'
         Bucket: !Ref AttachmentsBucket
+
+    ImagesSearch:
+      Type: AWS::Elasticsearch::Domain
+      Properties:
+        ElasticsearchVersion: '6.3'
+        DomainName: images-search-{$self:provider.stage}
+        ElasticsearchClusterConfig:
+          DedicatedMasterEnabled: false
+          InstanceCount: '1'
+          ZoneAwarenessEnabled: false
+          InstanceType: t2.small.elasticsearch
+        EBSOptions:
+          EBSEnabled: true
+          Iops: 0
+          VolumeSize: 10
+          VolumeType: 'gp2'
+        AccessPolicies:
+          Version: '2012-10-17'
+          Statement:
+            -
+              Effect: Allow
+              Principal:
+                AWS: '*'
+              Action: 'es:*'
+              Resource: '*'
 
       
