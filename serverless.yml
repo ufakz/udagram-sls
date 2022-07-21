@@ -94,6 +94,9 @@ functions:
               application/json: ${file(models/create-image-request.json)}
   
   SendUploadNotifications:
+    environment:
+      STAGE: ${sefl:provider.stage}
+      API_ID: oyph9skhr3
     handler: src/lambda/s3/sendNotification.handler
     events:
       - s3:
@@ -102,19 +105,31 @@ functions:
           existing: true
   
   ConnectHandler:
-    handler: src/websocket/connect.handler
+    handler: src/lambda/websocket/connect.handler
     events:
       - websocket:
           route: $connect
 
   DisconnectHandler:
-    handler: src/websocket/disconnect.handler
+    handler: src/lambda/websocket/disconnect.handler
     events:
       - websocket:
           route: $disconnect
 
 resources:
   Resources:
+    ConnectionsDynamoTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
+        TableName: ${self:provider.environment.CONNECTIONS_TABLE}
+
     GroupsDynamoTable:
       Type: AWS::DynamoDB::Table
       Properties:
