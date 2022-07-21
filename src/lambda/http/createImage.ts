@@ -42,7 +42,6 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
     imageUrl: `https://${bucketName}.s3.amazonaws.com/${imageId}`
   }
 
-
   await docClient.put({
     TableName: imagesTable,
     Item: newImage
@@ -66,7 +65,7 @@ function getUploadUrl(imageId: string) {
   return s3.getSignedUrl('putObject', {
     Bucket: bucketName,
     Key: imageId,
-    Expires: urlExpiration
+    Expires: parseInt(urlExpiration)
   })
 }
 
