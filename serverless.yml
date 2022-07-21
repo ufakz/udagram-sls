@@ -13,6 +13,7 @@ provider:
   environment:
     GROUPS_TABLE: Groups-${self:provider.stage}
     IMAGES_TABLE: Images-${self:provider.stage}
+    CONNECTIONS_TABLE: Connections-${self:provider.stage}
     IMAGE_ID_INDEX: ImagesIdIndex
     IMAGES_S3_BUCKET: ufakz-serverless-udagram-images-${self:provider.stage}
     SIGNED_URL_EXPIRATION: 300
@@ -38,6 +39,12 @@ provider:
         - s3:PutObject
         - s3:GetObject
       Resource: arn:aws:s3:::${self:provider.environment.IMAGES_S3_BUCKET}/*
+    - Effect: Allow
+      Action: 
+        - dynamodb:Scan
+        - dynamodb:PutItem
+        - dynamodb:DeleteItem
+      Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.CONNECTIONS_TABLE}
 
 functions:
   GetGroups:
@@ -85,6 +92,26 @@ functions:
           request:
             schema:
               application/json: ${file(models/create-image-request.json)}
+  
+  SendUploadNotifications:
+    handler: src/lambda/s3/sendNotification.handler
+    events:
+      - s3:
+          bucket: ${self:provider.environment.IMAGES_S3_BUCKET}
+          event: s3:ObjectCreated:*
+          existing: true
+  
+  ConnectHandler:
+    handler: src/websocket/connect.handler
+    events:
+      - websocket:
+          route: $connect
+
+  DisconnectHandler:
+    handler: src/websocket/disconnect.handler
+    events:
+      - websocket:
+          route: $disconnect
 
 resources:
   Resources:
