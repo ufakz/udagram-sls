@@ -13,8 +13,8 @@
   "devDependencies": {
     "@serverless/typescript": "^3.0.0",
     "@types/aws-lambda": "^8.10.71",
-    "@types/node": "^14.14.25",
     "@types/elasticsearch": "^5.0.32",
+    "@types/node": "^14.14.25",
     "aws-sdk": "^2.1177.0",
     "esbuild": "^0.14.11",
     "json-schema-to-ts": "^1.5.0",
@@ -29,6 +29,7 @@
     "aws-lambda": "^1.0.7",
     "elasticsearch": "^15.4.1",
     "http-aws-es": "^6.0.0",
+    "jimp": "^0.16.1",
     "ts-loader": "^9.3.1",
     "uuid": "^8.3.2"
   }

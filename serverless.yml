@@ -17,6 +17,7 @@ provider:
     IMAGE_ID_INDEX: ImagesIdIndex
     IMAGES_S3_BUCKET: ufakz-serverless-udagram-images-${self:provider.stage}
     SIGNED_URL_EXPIRATION: 300
+    THUMBNAILS_S3_BUCKET: serverless-udagram-thumbnail-${self:provider.stage}
 
   iamRoleStatements:
     - Effect: Allow
@@ -45,6 +46,8 @@ provider:
         - dynamodb:PutItem
         - dynamodb:DeleteItem
       Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.CONNECTIONS_TABLE}
+custom:
+  topicName: imagesTopic-${self:provider.stage}
 
 functions:
   GetGroups:
@@ -99,10 +102,28 @@ functions:
       API_ID: oyph9skhr3
     handler: src/lambda/s3/sendNotification.handler
     events:
-      - s3:
-          bucket: ${self:provider.environment.IMAGES_S3_BUCKET}
-          event: s3:ObjectCreated:*
-          existing: true
+      - sns:
+          arn:
+            Fn::Join:
+              - ':'
+              - - arn:aws:sns
+                - Ref: AWS::Region
+                - Ref: AWS::AccountId
+                - ${self:custom.topicName}
+          topicName: ${self:custom.topicName}
+  
+  ResizeImage:
+    handler: src/lambda/s3/resizeImage.handler
+    events:
+      - sns:
+          arn:
+            Fn::Join:
+              - ':'
+              - - arn:aws:sns
+                - Ref: AWS::Region
+                - Ref: AWS::AccountId
+                - ${self:custom.topicName}
+          topicName: ${self:custom.topicName}
   
   ConnectHandler:
     handler: src/lambda/websocket/connect.handler
@@ -180,8 +201,13 @@ resources:
     
     AttachmentsBucket:
       Type: AWS::S3::Bucket
+      DependsOn: SNSTopicPolicy
       Properties:
         BucketName: ${self:provider.environment.IMAGES_S3_BUCKET}
+        NotificationConfiguration:
+          TopicConfigurations:
+            - Event: s3:ObjectCreated:Put
+              Topic: !Ref ImagesTopic
         CorsConfiguration:
           CorsRules:
             - AllowedMethods:
@@ -214,7 +240,7 @@ resources:
       Type: AWS::Elasticsearch::Domain
       Properties:
         ElasticsearchVersion: '6.3'
-        DomainName: images-search-{$self:provider.stage}
+        DomainName: images-search-${self:provider.stage}
         ElasticsearchClusterConfig:
           DedicatedMasterEnabled: false
           InstanceCount: '1'
@@ -228,11 +254,39 @@ resources:
         AccessPolicies:
           Version: '2012-10-17'
           Statement:
-            -
-              Effect: Allow
+            - Effect: Allow
               Principal:
-                AWS: '*'
+                AWS: 
+                  - !Sub 'arn:aws:iam::094391969857:user/Admin'
+                  - !Sub 'arn:aws:sts::094391969857:assumed-role/voclabs/user1972234=11405688776'
               Action: 'es:*'
               Resource: '*'
 
-      
+    SNSTopicPolicy:
+      Type: AWS::SNS::TopicPolicy
+      Properties:
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Principal:
+                AWS: "*"
+              Action: sns:Publish
+              Resource:
+                !Ref ImagesTopic
+              Condition:
+                ArnLike:
+                  AWS:SourceArn: arn:aws:s3:::${self:provider.environment.IMAGES_S3_BUCKET}
+        Topics:
+          - !Ref ImagesTopic
+    
+    ThumbnailsBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:provider.environment.THUMBNAILS_S3_BUCKET}
+    
+    ImagesTopic:
+      Type: AWS::SNS::Topic
+      Properties:
+        DisplayName: Image bucket topic
+        TopicName: ${self:custom.topicName}
