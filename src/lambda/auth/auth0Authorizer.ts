@@ -64,6 +64,7 @@ function verifyToken(authHeader: string, secret: string): JwtToken {
 
 handler.use(
     secretsManager({
+        awsSdkOptions: { region: 'us-east-1' },
         cache: true,
         cacheExpiryInMillis: 60000,
         // Throw an error if can't read the secret
