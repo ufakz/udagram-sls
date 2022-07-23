@@ -32,6 +32,7 @@
     "jimp": "^0.16.1",
     "jsonwebtoken": "^8.5.1",
     "middy": "^0.36.0",
+    "serverless-plugin-canary-deployments": "^0.8.0",
     "ts-loader": "^9.3.1",
     "uuid": "^8.3.2"
   }

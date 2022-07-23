@@ -2,6 +2,7 @@ service: serverless-udagram-app
 
 plugins:
   - serverless-webpack
+  - serverless-plugin-canary-deployments
 
 provider:
   name: aws
@@ -57,6 +58,11 @@ provider:
       Action:
         - kms:Decrypt
       Resource: !GetAtt KMSKey.Arn
+    - Effect: Allow
+      Action: 
+        - codedeploy:*
+      Resource:
+        - '*' 
 
 custom:
   topicName: imagesTopic-${self:provider.stage}
@@ -101,6 +107,9 @@ functions:
           request:
             schema:
               application/json: ${file(models/create-group-request.json)}
+    deploymentSettings:
+      type: Linear10PercentEvery1Minute
+      alias: Live
   
   CreateImage:
     handler: src/lambda/http/createImage.handler
