@@ -24,7 +24,7 @@ A serverless image sharing application on AWS Lambda using the serverless framew
    
 ## Authentication
 
-To implement authentication in your application, you would have to create an Auth0 application and copy "domain" and "client id" to the `config.ts` file in the `client` folder. We recommend using asymmetrically encrypted JWT tokens.
+To implement authentication in your application, you would have to create an Auth0 application and copy "domain" and "client id" to your frontend application. 
 
 # How to run the application
 
